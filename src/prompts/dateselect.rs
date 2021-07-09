@@ -17,7 +17,6 @@ use crate::{
 };
 
 /// Presents a message to the user and a date picker for the user to choose from.
-#[derive(Clone)]
 pub struct DateSelect<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
@@ -126,9 +125,9 @@ impl<'a> DateSelect<'a> {
     }
 
     /// Adds the validators to the collection of validators.
-    pub fn with_validators(mut self, validators: &[DateValidator<'a>]) -> Self {
+    pub fn with_validators(mut self, validators: &'a mut [DateValidator<'a>]) -> Self {
         for validator in validators {
-            self.validators.push(validator.clone());
+            self.validators.push(validator);
         }
         self
     }
@@ -263,8 +262,8 @@ impl<'a> DateSelectPrompt<'a> {
         }
     }
 
-    fn get_final_answer(&self) -> Result<NaiveDate, String> {
-        for validator in &self.validators {
+    fn get_final_answer(&mut self) -> Result<NaiveDate, String> {
+        for validator in &mut self.validators {
             match validator(self.current_date) {
                 Ok(_) => {}
                 Err(err) => return Err(err),
@@ -382,7 +381,7 @@ mod test {
 
         let today_date = chrono::Local::now().date().naive_local();
 
-        let validator = |d| {
+        let mut validator = |d| {
             if today_date > d {
                 Ok(())
             } else {
@@ -395,7 +394,7 @@ mod test {
         let mut renderer = Renderer::new(terminal).unwrap();
 
         let ans = DateSelect::new("Question")
-            .with_validator(&validator)
+            .with_validator(&mut validator)
             .prompt_with_renderer(&mut renderer)
             .unwrap();
 

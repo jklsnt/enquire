@@ -14,7 +14,7 @@ pub type StringValidator = fn(answer: &str) -> Result<(), String>;
 /// When creating containers of validators, you might need to type hint
 /// them using this type.
 #[cfg(feature = "date")]
-pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<(), String>;
+pub type DateValidator<'a> = &'a mut dyn FnMut(chrono::NaiveDate) -> Result<(), String>;
 
 /// Type alias for validators that receive a collection of [OptionAnswer]'s as the input.
 /// When creating containers of validators, you might need to type hint
