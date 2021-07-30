@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crossterm::style::Color;
 
 use crate::{
@@ -5,6 +7,7 @@ use crate::{
     input::Input,
     key::Key,
     terminal::{Style, Terminal},
+    utils::Page,
 };
 
 pub struct Renderer<'a> {
@@ -211,6 +214,32 @@ impl<'a> Renderer<'a> {
         }?;
 
         self.new_line()?;
+
+        Ok(())
+    }
+
+    pub fn print_options<T>(&mut self, page: Page<T>) -> InquireResult<()>
+    where
+        T: Display,
+    {
+        let length = page.content.len();
+        for (idx, option) in page.content.iter().enumerate() {
+            let (c, color) = if idx == 0 && !page.first {
+                ("^ ", Color::Reset)
+            } else if (idx + 1) == length && !page.last {
+                ("v ", Color::Reset)
+            } else if idx == page.selection {
+                (" >", Color::Cyan)
+            } else {
+                ("  ", Color::Reset)
+            };
+
+            Token::new(&format!("{} {}", c, option))
+                .with_fg(color)
+                .print(&mut self.terminal)?;
+
+            self.new_line()?;
+        }
 
         Ok(())
     }

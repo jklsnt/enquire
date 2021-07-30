@@ -246,9 +246,7 @@ impl<'a> SelectPrompt<'a> {
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
-        for (idx, opt) in page.content.iter().enumerate() {
-            renderer.print_option(page.selection == idx, &opt.value)?;
-        }
+        renderer.print_options(page)?;
 
         if let Some(help_message) = self.help_message {
             renderer.print_help(help_message)?;
