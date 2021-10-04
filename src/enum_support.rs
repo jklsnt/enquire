@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     error::InquireResult,
-    list_option::{FromListOption, ListOption},
+    selected_option::{FromSelectedOption, SelectedOption},
 };
 
 pub trait InquireEnumVariants {

@@ -5,7 +5,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{StringFormatter, DEFAULT_STRING_FORMATTER},
     input::Input,
-    list_option::ListOption,
+    selected_option::SelectedOption,
     terminal::get_default_terminal,
     type_aliases::Suggester,
     ui::{Backend, Key, KeyModifiers, RenderConfig, TextBackend},
@@ -405,8 +405,8 @@ impl<'a> TextPrompt<'a> {
             .suggested_options
             .iter()
             .enumerate()
-            .map(|(i, val)| ListOption::new(i, val.as_ref()))
-            .collect::<Vec<ListOption<&str>>>();
+            .map(|(i, val)| SelectedOption::new(i, val.as_ref()))
+            .collect::<Vec<SelectedOption<&str>>>();
 
         let list_index = self.cursor_index.saturating_sub(1);
         let mut page = paginate(self.page_size, &choices, list_index);

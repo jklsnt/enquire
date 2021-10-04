@@ -46,7 +46,7 @@
 //! ? What's your name? My name is Mikael
 //! ```
 
-use crate::list_option::ListOption;
+use crate::selected_option::SelectedOption;
 
 /// Type alias for formatters that receive a string slice as the input,
 /// required by [Text](crate::Text) and [Password](crate::Password) for example.
@@ -92,14 +92,14 @@ pub type BoolFormatter<'a> = &'a dyn Fn(bool) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::list_option::ListOption;
+/// use inquire::selected_option::SelectedOption;
 /// use inquire::formatter::OptionFormatter;
 ///
 /// let formatter: OptionFormatter<str> = &|i| format!("Option {}: '{}'", i.index + 1, i.value);
-/// assert_eq!(String::from("Option 1: 'a'"), formatter(ListOption::new(0, "a")));
-/// assert_eq!(String::from("Option 2: 'b'"), formatter(ListOption::new(1, "b")));
+/// assert_eq!(String::from("Option 1: 'a'"), formatter(SelectedOption::new(0, "a")));
+/// assert_eq!(String::from("Option 2: 'b'"), formatter(SelectedOption::new(1, "b")));
 /// ```
-pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
+pub type OptionFormatter<'a, T> = &'a dyn Fn(SelectedOption<&T>) -> String;
 
 /// Type alias for formatters used in [`MultiSelect`](crate::MultiSelect) prompts.
 ///
@@ -109,7 +109,7 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 /// # Examples
 ///
 /// ```
-/// use inquire::list_option::ListOption;
+/// use inquire::selected_option::SelectedOption;
 /// use inquire::formatter::MultiOptionFormatter;
 ///
 /// let formatter: MultiOptionFormatter<str> = &|opts| {
@@ -121,13 +121,13 @@ pub type OptionFormatter<'a, T> = &'a dyn Fn(ListOption<&T>) -> String;
 ///     format!("You selected {} {}", len, options)
 /// };
 ///
-/// let mut ans = vec![ListOption::new(0, "a")];
+/// let mut ans = vec![SelectedOption::new(0, "a")];
 /// assert_eq!(String::from("You selected 1 option"), formatter(&ans));
 ///
-/// ans.push(ListOption::new(3, "d"));
+/// ans.push(SelectedOption::new(3, "d"));
 /// assert_eq!(String::from("You selected 2 options"), formatter(&ans));
 /// ```
-pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[ListOption<&T>]) -> String;
+pub type MultiOptionFormatter<'a, T> = &'a dyn Fn(&[SelectedOption<&T>]) -> String;
 
 /// Type alias for formatters used in [`CustomType`](crate::CustomType) prompts.
 ///

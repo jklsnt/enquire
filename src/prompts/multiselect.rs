@@ -5,7 +5,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::MultiOptionFormatter,
     input::Input,
-    list_option::ListOption,
+    selected_option::SelectedOption,
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
@@ -103,18 +103,18 @@ where
     /// # Examples
     ///
     /// ```
-    /// use inquire::list_option::ListOption;
+    /// use inquire::selected_option::SelectedOption;
     /// use inquire::MultiSelect;
     ///
     /// let formatter = MultiSelect::<&str>::DEFAULT_FORMATTER;
     ///
-    /// let mut ans = vec![ListOption::new(0, &"New York")];
+    /// let mut ans = vec![SelectedOption::new(0, &"New York")];
     /// assert_eq!(String::from("New York"), formatter(&ans));
     ///
-    /// ans.push(ListOption::new(3, &"Seattle"));
+    /// ans.push(SelectedOption::new(3, &"Seattle"));
     /// assert_eq!(String::from("New York, Seattle"), formatter(&ans));
     ///
-    /// ans.push(ListOption::new(7, &"Vancouver"));
+    /// ans.push(SelectedOption::new(7, &"Vancouver"));
     /// assert_eq!(String::from("New York, Seattle, Vancouver"), formatter(&ans));
     /// ```
     pub const DEFAULT_FORMATTER: MultiOptionFormatter<'a, T> = &|ans| {
@@ -295,7 +295,7 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns a vector of [`ListOption`](crate::list_option::ListOption)s containing
+    /// Returns a vector of [`SelectedOption`](crate::selected_option::SelectedOption)s containing
     /// the index of the selections and the owned objects selected by the user.
     ///
     /// This method is intended for flows where the user skipping/cancelling
@@ -304,7 +304,7 @@ where
     ///
     /// Meanwhile, if the user does submit an answer, the method wraps the return
     /// type with `Some`.
-    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<ListOption<T>>>> {
+    pub fn raw_prompt_skippable(self) -> InquireResult<Option<Vec<SelectedOption<T>>>> {
         match self.raw_prompt() {
             Ok(answer) => Ok(Some(answer)),
             Err(InquireError::OperationCanceled) => Ok(None),
@@ -315,9 +315,9 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns a [`ListOption`](crate::list_option::ListOption) containing
+    /// Returns a [`SelectedOption`](crate::selected_option::SelectedOption) containing
     /// the index of the selection and the owned object selected by the user.
-    pub fn raw_prompt(self) -> InquireResult<Vec<ListOption<T>>> {
+    pub fn raw_prompt(self) -> InquireResult<Vec<SelectedOption<T>>> {
         let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -326,7 +326,7 @@ where
     pub(in crate) fn prompt_with_backend<B: MultiSelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<Vec<ListOption<T>>> {
+    ) -> InquireResult<Vec<SelectedOption<T>>> {
         MultiSelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -502,10 +502,10 @@ where
                 .iter()
                 .enumerate()
                 .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                    true => Some(ListOption::new(idx, opt)),
+                    true => Some(SelectedOption::new(idx, opt)),
                     false => None,
                 })
-                .collect::<Vec<ListOption<&T>>>();
+                .collect::<Vec<SelectedOption<&T>>>();
 
             let res = validator(&selected_options)?;
             Ok(res)
@@ -514,7 +514,7 @@ where
         }
     }
 
-    fn get_final_answer(&mut self) -> Vec<ListOption<T>> {
+    fn get_final_answer(&mut self) -> Vec<SelectedOption<T>> {
         let mut answer = vec![];
 
         // by iterating in descending order, we can safely
@@ -523,7 +523,7 @@ where
         for index in self.checked.iter().rev() {
             let index = *index;
             let value = self.options.swap_remove(index);
-            let lo = ListOption::new(index, value);
+            let lo = SelectedOption::new(index, value);
             answer.push(lo);
         }
         answer.reverse();
@@ -546,8 +546,8 @@ where
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&T>>>();
+            .map(|i| SelectedOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<SelectedOption<&T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -565,7 +565,7 @@ where
     fn prompt<B: MultiSelectBackend>(
         mut self,
         backend: &mut B,
-    ) -> InquireResult<Vec<ListOption<T>>> {
+    ) -> InquireResult<Vec<SelectedOption<T>>> {
         loop {
             self.render(backend)?;
 
@@ -583,7 +583,8 @@ where
         }
 
         let final_answer = self.get_final_answer();
-        let refs: Vec<ListOption<&T>> = final_answer.iter().map(ListOption::as_ref).collect();
+        let refs: Vec<SelectedOption<&T>> =
+            final_answer.iter().map(SelectedOption::as_ref).collect();
         let formatted = (self.formatter)(&refs);
 
         finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
@@ -595,7 +596,7 @@ where
 mod test {
     use crate::{
         formatter::MultiOptionFormatter,
-        list_option::ListOption,
+        selected_option::SelectedOption,
         terminal::crossterm::CrosstermTerminal,
         ui::{Backend, RenderConfig},
         MultiSelect,
@@ -626,7 +627,7 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(vec![ListOption::new(0, 1)], ans);
+        assert_eq!(vec![SelectedOption::new(0, 1)], ans);
     }
 
     #[test]
@@ -657,12 +658,12 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(Vec::<ListOption<i32>>::new(), ans);
+        assert_eq!(Vec::<SelectedOption<i32>>::new(), ans);
     }
 
     #[test]
     // Anti-regression test: https://github.com/mikaelmello/inquire/issues/31
-    fn list_option_indexes_are_relative_to_input_vec() {
+    fn selected_option_indexes_are_relative_to_input_vec() {
         let read: Vec<KeyEvent> = vec![
             KeyCode::Down,
             KeyCode::Char(' '),
@@ -685,6 +686,9 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(vec![ListOption::new(1, 2), ListOption::new(2, 3)], ans);
+        assert_eq!(
+            vec![SelectedOption::new(1, 2), SelectedOption::new(2, 3)],
+            ans
+        );
     }
 }

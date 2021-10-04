@@ -16,7 +16,7 @@
 //! This module also provides several built-in validators generated through macros,
 //! exported with the `builtin_validators` feature.
 
-use crate::{error::CustomUserError, list_option::ListOption};
+use crate::{error::CustomUserError, selected_option::SelectedOption};
 
 /// Error message that is displayed to the users when their input is considered not
 /// valid by registered validators.
@@ -133,7 +133,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation,
 /// # Examples
 ///
 /// ```
-/// use inquire::list_option::ListOption;
+/// use inquire::selected_option::SelectedOption;
 /// use inquire::validator::{MultiOptionValidator, Validation};
 ///
 /// let validator: MultiOptionValidator<&str> = &|input| {
@@ -144,11 +144,11 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation,
 ///     }
 /// };
 ///
-/// let mut ans = vec![ListOption::new(0, &"a"), ListOption::new(1, &"b")];
+/// let mut ans = vec![SelectedOption::new(0, &"a"), SelectedOption::new(1, &"b")];
 ///
 /// assert_eq!(Validation::Valid, validator(&ans)?);
 ///
-/// ans.push(ListOption::new(3, &"d"));
+/// ans.push(SelectedOption::new(3, &"d"));
 /// assert_eq!(
 ///     Validation::Invalid("You should select at most two options".into()),
 ///     validator(&ans)?
@@ -156,7 +156,7 @@ pub type DateValidator<'a> = &'a dyn Fn(chrono::NaiveDate) -> Result<Validation,
 /// # Ok::<(), inquire::error::CustomUserError>(())
 /// ```
 pub type MultiOptionValidator<'a, T> =
-    &'a dyn Fn(&[ListOption<&T>]) -> Result<Validation, CustomUserError>;
+    &'a dyn Fn(&[SelectedOption<&T>]) -> Result<Validation, CustomUserError>;
 
 /// Custom trait to call correct method to retrieve input length.
 ///
@@ -357,15 +357,15 @@ macro_rules! length {
 mod builtin_validators_test {
     use crate::{
         error::CustomUserError,
-        list_option::ListOption,
+        selected_option::SelectedOption,
         validator::{MultiOptionValidator, StringValidator, Validation},
     };
 
-    fn build_option_vec(len: usize) -> Vec<ListOption<&'static str>> {
+    fn build_option_vec(len: usize) -> Vec<SelectedOption<&'static str>> {
         let mut options = Vec::new();
 
         for i in 0..len {
-            options.push(ListOption::new(i, ""));
+            options.push(SelectedOption::new(i, ""));
         }
 
         options

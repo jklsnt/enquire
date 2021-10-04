@@ -95,7 +95,7 @@ In the [`render_config.rs`](./examples/render_config.rs) example, you can take a
 
 Almost all prompts provide an API to set custom validators.
 
-The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[ListOption]`, or `NaiveDate`, but their return type are always the same: `Result<Validation, CustomUserError>`.
+The validators provided to a given prompt are called whenever the user submits their input. These validators vary by prompt type, receiving different types of variables as arguments, such as `&str`, `&[SelectedOption]`, or `NaiveDate`, but their return type are always the same: `Result<Validation, CustomUserError>`.
 
 The `Validation` type is an enum that indicates whether the user input is valid, in which you should return `Ok(Validation::Invalid)`, or invalid, where you should return `Ok(Validation::Invalid(ErrorMessage))`. The `ErrorMessage` type is another enum, containing the `Default` and `Custom(String)` variants, indicating the message to indicate the user that their input is invalid.
 

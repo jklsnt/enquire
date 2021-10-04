@@ -65,7 +65,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{
-        list_option::ListOption,
+        selected_option::SelectedOption,
         utils::{int_log10, paginate},
     };
 
@@ -90,7 +90,7 @@ mod test {
 
     #[test]
     fn paginate_too_few() {
-        let choices = ListOption::from_list(vec!["1", "2", "3"]);
+        let choices = SelectedOption::from_list(vec!["1", "2", "3"]);
 
         let page_size = 4usize;
         let sel = 3usize;
@@ -106,7 +106,7 @@ mod test {
 
     #[test]
     fn paginate_first_half() {
-        let choices = ListOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = SelectedOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 4usize;
         let sel = 2usize;
@@ -122,7 +122,7 @@ mod test {
 
     #[test]
     fn paginate_middle() {
-        let choices = ListOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = SelectedOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 2usize;
         let sel = 3usize;
@@ -138,7 +138,7 @@ mod test {
 
     #[test]
     fn paginate_lasts_half() {
-        let choices = ListOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
+        let choices = SelectedOption::from_list(vec!["1", "2", "3", "4", "5", "6"]);
 
         let page_size = 3usize;
         let sel = 5usize;

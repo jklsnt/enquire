@@ -4,7 +4,7 @@ use unicode_width::UnicodeWidthChar;
 
 use crate::{
     input::Input,
-    list_option::ListOption,
+    selected_option::SelectedOption,
     terminal::{Terminal, TerminalSize},
     ui::{IndexPrefix, Key, RenderConfig, Styled},
     utils::{int_log10, Page},
@@ -31,7 +31,7 @@ pub trait TextBackend: CommonBackend {
         default: Option<&str>,
         cur_input: &Input,
     ) -> Result<()>;
-    fn render_suggestions<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
+    fn render_suggestions<D: Display>(&mut self, page: Page<SelectedOption<D>>) -> Result<()>;
 }
 
 #[cfg(feature = "editor")]
@@ -41,14 +41,14 @@ pub trait EditorBackend: CommonBackend {
 
 pub trait SelectBackend: CommonBackend {
     fn render_select_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()>;
+    fn render_options<D: Display>(&mut self, page: Page<SelectedOption<D>>) -> Result<()>;
 }
 
 pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
     fn render_options<D: Display>(
         &mut self,
-        page: Page<ListOption<D>>,
+        page: Page<SelectedOption<D>>,
         checked: &BTreeSet<usize>,
     ) -> Result<()>;
 }
@@ -222,7 +222,7 @@ where
     fn print_option_prefix<D: Display>(
         &mut self,
         idx: usize,
-        page: &Page<ListOption<D>>,
+        page: &Page<SelectedOption<D>>,
     ) -> Result<()> {
         let empty_prefix = Styled::new(" ");
 
@@ -239,7 +239,7 @@ where
         self.terminal.write_styled(&x)
     }
 
-    fn print_option_value<D: Display>(&mut self, option: &ListOption<D>) -> Result<()> {
+    fn print_option_value<D: Display>(&mut self, option: &SelectedOption<D>) -> Result<()> {
         self.terminal
             .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
     }
@@ -456,7 +456,7 @@ where
         self.print_prompt_with_input(prompt, default, cur_input)
     }
 
-    fn render_suggestions<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()> {
+    fn render_suggestions<D: Display>(&mut self, page: Page<SelectedOption<D>>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -499,7 +499,7 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_options<D: Display>(&mut self, page: Page<ListOption<D>>) -> Result<()> {
+    fn render_options<D: Display>(&mut self, page: Page<SelectedOption<D>>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -529,7 +529,7 @@ where
 
     fn render_options<D: Display>(
         &mut self,
-        page: Page<ListOption<D>>,
+        page: Page<SelectedOption<D>>,
         checked: &BTreeSet<usize>,
     ) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {

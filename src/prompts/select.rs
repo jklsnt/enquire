@@ -5,7 +5,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::OptionFormatter,
     input::Input,
-    list_option::ListOption,
+    selected_option::SelectedOption,
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, RenderConfig, SelectBackend},
@@ -102,12 +102,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// use inquire::list_option::ListOption;
+    /// use inquire::selected_option::SelectedOption;
     /// use inquire::Select;
     ///
     /// let formatter = Select::<&str>::DEFAULT_FORMATTER;
-    /// assert_eq!(String::from("First option"), formatter(ListOption::new(0, &"First option")));
-    /// assert_eq!(String::from("First option"), formatter(ListOption::new(11, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(SelectedOption::new(0, &"First option")));
+    /// assert_eq!(String::from("First option"), formatter(SelectedOption::new(11, &"First option")));
     /// ```
     pub const DEFAULT_FORMATTER: OptionFormatter<'a, T> = &|ans| ans.to_string();
 
@@ -251,9 +251,9 @@ where
     /// Parses the provided behavioral and rendering options and prompts
     /// the CLI user for input according to the defined rules.
     ///
-    /// Returns a [`ListOption`](crate::list_option::ListOption) containing
+    /// Returns a [`SelectedOption`](crate::selected_option::SelectedOption) containing
     /// the index of the selection and the owned object selected by the user.
-    pub fn raw_prompt(self) -> InquireResult<ListOption<T>> {
+    pub fn raw_prompt(self) -> InquireResult<SelectedOption<T>> {
         let terminal = get_default_terminal()?;
         let mut backend = Backend::new(terminal, self.render_config)?;
         self.prompt_with_backend(&mut backend)
@@ -262,7 +262,7 @@ where
     pub(in crate) fn prompt_with_backend<B: SelectBackend>(
         self,
         backend: &mut B,
-    ) -> InquireResult<ListOption<T>> {
+    ) -> InquireResult<SelectedOption<T>> {
         SelectPrompt::new(self)?.prompt(backend)
     }
 }
@@ -386,14 +386,14 @@ where
         self.filtered_options.get(self.cursor_index).is_some()
     }
 
-    fn get_final_answer(&mut self) -> ListOption<T> {
+    fn get_final_answer(&mut self) -> SelectedOption<T> {
         // should only be called after current cursor index is validated
         // on has_answer_highlighted
 
         let index = *self.filtered_options.get(self.cursor_index).unwrap();
         let value = self.options.swap_remove(index);
 
-        ListOption::new(index, value)
+        SelectedOption::new(index, value)
     }
 
     fn render<B: SelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -407,8 +407,8 @@ where
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| ListOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<ListOption<&T>>>();
+            .map(|i| SelectedOption::new(i, self.options.get(i).unwrap()))
+            .collect::<Vec<SelectedOption<&T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -423,7 +423,7 @@ where
         Ok(())
     }
 
-    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<ListOption<T>> {
+    fn prompt<B: SelectBackend>(mut self, backend: &mut B) -> InquireResult<SelectedOption<T>> {
         loop {
             self.render(backend)?;
 
@@ -452,7 +452,7 @@ where
 mod test {
     use crate::{
         formatter::OptionFormatter,
-        list_option::ListOption,
+        selected_option::SelectedOption,
         terminal::crossterm::CrosstermTerminal,
         ui::{Backend, RenderConfig},
         Select,
@@ -483,7 +483,7 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(ListOption::new(1, 2), ans);
+        assert_eq!(SelectedOption::new(1, 2), ans);
     }
 
     #[test]
@@ -512,7 +512,7 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(ListOption::new(2, 3), ans);
+        assert_eq!(SelectedOption::new(2, 3), ans);
     }
 
     #[test]
@@ -543,6 +543,6 @@ mod test {
             .prompt_with_backend(&mut backend)
             .unwrap();
 
-        assert_eq!(ListOption::new(0, 1), ans);
+        assert_eq!(SelectedOption::new(0, 1), ans);
     }
 }
