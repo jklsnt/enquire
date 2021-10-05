@@ -9,7 +9,7 @@ use crate::{
     terminal::get_default_terminal,
     type_aliases::Filter,
     ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
-    utils::paginate,
+    utils::{paginate, ListOption},
     validator::{ErrorMessage, MultiOptionValidator, Validation},
 };
 
@@ -333,12 +333,10 @@ where
 
 struct MultiSelectPrompt<'a, T> {
     message: &'a str,
-    options: Vec<T>,
-    string_options: Vec<String>,
+    options: Vec<ListOption<T>>,
     help_message: Option<&'a str>,
     vim_mode: bool,
     cursor_index: usize,
-    checked: BTreeSet<usize>,
     page_size: usize,
     keep_filter: bool,
     input: Input,
@@ -371,16 +369,26 @@ where
             }
         }
 
-        let string_options = mso.options.iter().map(T::to_string).collect();
         let filtered_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
             .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
 
+        let options = mso
+            .options
+            .into_iter()
+            .enumerate()
+            .map(|(idx, opt)| ListOption {
+                index: idx,
+                string_value: opt.to_string(),
+                value: opt,
+                checked: checked_options.contains(&idx),
+            })
+            .collect();
+
         Ok(Self {
             message: mso.message,
-            options: mso.options,
-            string_options,
+            options,
             filtered_options,
             help_message: mso.help_message,
             vim_mode: mso.vim_mode,
@@ -392,7 +400,6 @@ where
             formatter: mso.formatter,
             validator: mso.validator,
             error: None,
-            checked: checked_options,
         })
     }
 
@@ -402,7 +409,7 @@ where
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
                 val if val.is_empty() => Some(i),
-                val if (self.filter)(val, opt, self.string_options.get(i).unwrap(), i) => Some(i),
+                val if (self.filter)(val, &opt.value, &opt.string_value, i) => Some(i),
                 _ => None,
             })
             .collect()
@@ -434,16 +441,24 @@ where
         }
     }
 
+    fn set_all(&mut self, checked: bool) {
+        for opt in self.options.as_mut_slice() {
+            opt.checked = checked;
+        }
+    }
+
     fn toggle_cursor_selection(&mut self) {
         let idx = match self.filtered_options.get(self.cursor_index) {
-            Some(val) => val,
+            Some(val) => *val,
             None => return,
         };
 
-        if self.checked.contains(idx) {
-            self.checked.remove(idx);
-        } else {
-            self.checked.insert(*idx);
+        match self.options.get_mut(idx) {
+            Some(opt) => {
+                opt.checked = !opt.checked;
+            }
+            // dynamic option
+            None => todo!(),
         }
 
         if !self.keep_filter {
@@ -465,17 +480,14 @@ where
 
             Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
             Key::Right(KeyModifiers::NONE) => {
-                self.checked.clear();
-                for idx in &self.filtered_options {
-                    self.checked.insert(*idx);
-                }
+                self.set_all(true);
 
                 if !self.keep_filter {
                     self.input.clear();
                 }
             }
             Key::Left(KeyModifiers::NONE) => {
-                self.checked.clear();
+                self.set_all(false);
 
                 if !self.keep_filter {
                     self.input.clear();
@@ -500,9 +512,8 @@ where
             let selected_options = self
                 .options
                 .iter()
-                .enumerate()
-                .filter_map(|(idx, opt)| match &self.checked.contains(&idx) {
-                    true => Some(SelectedOption::new(idx, opt)),
+                .filter_map(|opt| match opt.checked {
+                    true => Some(SelectedOption::new(opt.index, &opt.value)),
                     false => None,
                 })
                 .collect::<Vec<SelectedOption<&T>>>();
@@ -514,21 +525,12 @@ where
         }
     }
 
-    fn get_final_answer(&mut self) -> Vec<SelectedOption<T>> {
-        let mut answer = vec![];
-
-        // by iterating in descending order, we can safely
-        // swap remove because the elements to the right
-        // that we did not remove will not matter anymore.
-        for index in self.checked.iter().rev() {
-            let index = *index;
-            let value = self.options.swap_remove(index);
-            let lo = SelectedOption::new(index, value);
-            answer.push(lo);
-        }
-        answer.reverse();
-
-        answer
+    fn get_final_answer(mut self) -> Vec<SelectedOption<T>> {
+        self.options
+            .drain(..)
+            .filter(|opt| opt.checked)
+            .map(|opt| SelectedOption::new(opt.index, opt.value))
+            .collect()
     }
 
     fn render<B: MultiSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
@@ -546,12 +548,12 @@ where
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| SelectedOption::new(i, self.options.get(i).unwrap()))
-            .collect::<Vec<SelectedOption<&T>>>();
+            .map(|i| self.options.get(i).unwrap())
+            .collect::<Vec<&ListOption<T>>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
-        backend.render_options(page, &self.checked)?;
+        backend.render_options(page)?;
 
         if let Some(help_message) = self.help_message {
             backend.render_help_message(help_message)?;
@@ -582,12 +584,17 @@ where
             }
         }
 
+        #[allow(clippy::clone_double_ref)]
+        let message = self.message.clone();
+        #[allow(clippy::clone_double_ref)]
+        let formatter = self.formatter.clone();
+
         let final_answer = self.get_final_answer();
         let refs: Vec<SelectedOption<&T>> =
             final_answer.iter().map(SelectedOption::as_ref).collect();
-        let formatted = (self.formatter)(&refs);
+        let formatted = formatter(&refs);
 
-        finish_prompt_with_answer!(backend, self.message, &formatted, final_answer);
+        finish_prompt_with_answer!(backend, message, &formatted, final_answer);
     }
 }
 

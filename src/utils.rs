@@ -1,5 +1,12 @@
 // sorry for this file
 
+pub struct ListOption<T> {
+    pub index: usize,
+    pub value: T,
+    pub string_value: String,
+    pub checked: bool,
+}
+
 pub struct Page<'a, T> {
     pub first: bool,
     pub last: bool,

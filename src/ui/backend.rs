@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, fmt::Display, io::Result};
+use std::{fmt::Display, io::Result};
 
 use unicode_width::UnicodeWidthChar;
 
@@ -7,7 +7,7 @@ use crate::{
     selected_option::SelectedOption,
     terminal::{Terminal, TerminalSize},
     ui::{IndexPrefix, Key, RenderConfig, Styled},
-    utils::{int_log10, Page},
+    utils::{int_log10, ListOption, Page},
     validator::ErrorMessage,
 };
 
@@ -46,11 +46,7 @@ pub trait SelectBackend: CommonBackend {
 
 pub trait MultiSelectBackend: CommonBackend {
     fn render_multiselect_prompt(&mut self, prompt: &str, cur_input: &Input) -> Result<()>;
-    fn render_options<D: Display>(
-        &mut self,
-        page: Page<SelectedOption<D>>,
-        checked: &BTreeSet<usize>,
-    ) -> Result<()>;
+    fn render_options<D>(&mut self, page: Page<&ListOption<D>>) -> Result<()>;
 }
 
 pub trait CustomTypeBackend: CommonBackend {
@@ -219,11 +215,7 @@ where
         self.terminal.write_styled(&token)
     }
 
-    fn print_option_prefix<D: Display>(
-        &mut self,
-        idx: usize,
-        page: &Page<SelectedOption<D>>,
-    ) -> Result<()> {
+    fn print_option_prefix<D>(&mut self, idx: usize, page: &Page<D>) -> Result<()> {
         let empty_prefix = Styled::new(" ");
 
         let x = if idx == page.selection {
@@ -239,9 +231,10 @@ where
         self.terminal.write_styled(&x)
     }
 
-    fn print_option_value<D: Display>(&mut self, option: &SelectedOption<D>) -> Result<()> {
-        self.terminal
-            .write_styled(&Styled::new(&option.value).with_style_sheet(self.render_config.option))
+    fn print_option_value<D>(&mut self, option: &ListOption<D>) -> Result<()> {
+        self.terminal.write_styled(
+            &Styled::new(&option.string_value).with_style_sheet(self.render_config.option),
+        )
     }
 
     fn print_option_index_prefix(&mut self, index: usize, max_index: usize) -> Option<Result<()>> {
@@ -462,7 +455,12 @@ where
 
             self.terminal.write(" ")?;
 
-            self.print_option_value(option)?;
+            self.print_option_value(&ListOption {
+                index: option.index,
+                value: &option.value,
+                string_value: option.value.to_string(),
+                checked: false,
+            })?;
 
             self.new_line()?;
         }
@@ -510,7 +508,12 @@ where
                 self.terminal.write(" ")?;
             }
 
-            self.print_option_value(option)?;
+            self.print_option_value(&ListOption {
+                index: option.index,
+                value: &option.value,
+                string_value: option.value.to_string(),
+                checked: false,
+            })?;
 
             self.new_line()?;
         }
@@ -527,11 +530,7 @@ where
         self.print_prompt_with_input(prompt, None, cur_input)
     }
 
-    fn render_options<D: Display>(
-        &mut self,
-        page: Page<SelectedOption<D>>,
-        checked: &BTreeSet<usize>,
-    ) -> Result<()> {
+    fn render_options<D>(&mut self, page: Page<&ListOption<D>>) -> Result<()> {
         for (idx, option) in page.content.iter().enumerate() {
             self.print_option_prefix(idx, &page)?;
 
@@ -542,13 +541,12 @@ where
                 self.terminal.write(" ")?;
             }
 
-            match checked.contains(&option.index) {
-                true => self
-                    .terminal
-                    .write_styled(&self.render_config.selected_checkbox)?,
-                false => self
-                    .terminal
-                    .write_styled(&self.render_config.unselected_checkbox)?,
+            if option.checked {
+                self.terminal
+                    .write_styled(&self.render_config.selected_checkbox)?;
+            } else {
+                self.terminal
+                    .write_styled(&self.render_config.unselected_checkbox)?;
             }
 
             self.terminal.write(" ")?;
