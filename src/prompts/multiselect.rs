@@ -7,8 +7,11 @@ use crate::{
     input::Input,
     selected_option::SelectedOption,
     terminal::get_default_terminal,
-    type_aliases::Filter,
-    ui::{Backend, Key, KeyModifiers, MultiSelectBackend, RenderConfig},
+    type_aliases::{DynamicOption, Filter},
+    ui::{
+        Backend, Key, KeyModifiers, ListOptionValue, ListOptionView, MultiSelectBackend,
+        RenderConfig,
+    },
     utils::{paginate, ListOption},
     validator::{ErrorMessage, MultiOptionValidator, Validation},
 };
@@ -73,6 +76,8 @@ pub struct MultiSelect<'a, T> {
 
     /// Whether the current filter typed by the user is kept or cleaned after a selection is made.
     pub keep_filter: bool,
+
+    pub dynamic_option: DynamicOption<'a, T>,
 
     /// Function that formats the user input and presents it to the user as the final rendering of the prompt.
     pub formatter: MultiOptionFormatter<'a, T>,
@@ -182,6 +187,7 @@ where
             keep_filter: Self::DEFAULT_KEEP_FILTER,
             filter: Self::DEFAULT_FILTER,
             formatter: Self::DEFAULT_FORMATTER,
+            dynamic_option: DynamicOption::Disabled,
             validator: None,
             render_config: get_configuration(),
         }
@@ -226,6 +232,11 @@ where
     /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: MultiOptionFormatter<'a, T>) -> Self {
         self.formatter = formatter;
+        self
+    }
+
+    pub fn with_dynamic_option(mut self, dynamic_option: DynamicOption<'a, T>) -> Self {
+        self.dynamic_option = dynamic_option;
         self
     }
 
@@ -342,6 +353,7 @@ struct MultiSelectPrompt<'a, T> {
     input: Input,
     filtered_options: Vec<usize>,
     filter: Filter<'a, T>,
+    dynamic_option: DynamicOption<'a, T>,
     formatter: MultiOptionFormatter<'a, T>,
     validator: Option<MultiOptionValidator<'a, T>>,
     error: Option<ErrorMessage>,
@@ -369,7 +381,6 @@ where
             }
         }
 
-        let filtered_options = (0..mso.options.len()).collect();
         let checked_options = mso
             .default
             .map_or_else(BTreeSet::new, |d| d.iter().cloned().collect());
@@ -389,13 +400,14 @@ where
         Ok(Self {
             message: mso.message,
             options,
-            filtered_options,
+            filtered_options: vec![],
             help_message: mso.help_message,
             vim_mode: mso.vim_mode,
             cursor_index: mso.starting_cursor,
             page_size: mso.page_size,
             keep_filter: mso.keep_filter,
             input: Input::new(),
+            dynamic_option: mso.dynamic_option,
             filter: mso.filter,
             formatter: mso.formatter,
             validator: mso.validator,
@@ -403,8 +415,9 @@ where
         })
     }
 
-    fn filter_options(&self) -> Vec<usize> {
-        self.options
+    fn filter_options(&self) -> InquireResult<Vec<usize>> {
+        let mut filtered = self
+            .options
             .iter()
             .enumerate()
             .filter_map(|(i, opt)| match self.input.content() {
@@ -412,7 +425,17 @@ where
                 val if (self.filter)(val, &opt.value, &opt.string_value, i) => Some(i),
                 _ => None,
             })
-            .collect()
+            .collect::<Vec<usize>>();
+
+        if let DynamicOption::Enabled(condition, _) = self.dynamic_option {
+            let input = self.input.content();
+            let options = &self.options[..];
+            if let Some(string) = condition(input, options)? {
+                filtered.push(self.options.len());
+            }
+        }
+
+        Ok(filtered)
     }
 
     fn move_cursor_up(&mut self, qty: usize, wrap: bool) {
@@ -447,10 +470,10 @@ where
         }
     }
 
-    fn toggle_cursor_selection(&mut self) {
+    fn toggle_cursor_selection(&mut self) -> InquireResult<()> {
         let idx = match self.filtered_options.get(self.cursor_index) {
             Some(val) => *val,
-            None => return,
+            None => unreachable!(),
         };
 
         match self.options.get_mut(idx) {
@@ -458,15 +481,39 @@ where
                 opt.checked = !opt.checked;
             }
             // dynamic option
-            None => todo!(),
+            None => {
+                if let DynamicOption::Enabled(_, creator) = self.dynamic_option {
+                    let cur_input = self.input.content();
+                    let value = creator(cur_input)?;
+                    let index = self.options.len();
+                    let option = ListOption {
+                        string_value: value.to_string(),
+                        index,
+                        value,
+                        checked: true,
+                    };
+                    self.options.push(option);
+                }
+            }
         }
 
         if !self.keep_filter {
             self.input.clear();
         }
+
+        Ok(())
     }
 
-    fn on_change(&mut self, key: Key) {
+    fn refresh_options(&mut self) -> InquireResult<()> {
+        let options = self.filter_options()?;
+        if options.len() <= self.cursor_index {
+            self.cursor_index = options.len().saturating_sub(1);
+        }
+        self.filtered_options = options;
+        Ok(())
+    }
+
+    fn on_change(&mut self, key: Key) -> InquireResult<()> {
         match key {
             Key::Up(KeyModifiers::NONE) => self.move_cursor_up(1, true),
             Key::Char('k', KeyModifiers::NONE) if self.vim_mode => self.move_cursor_up(1, true),
@@ -478,7 +525,7 @@ where
             Key::PageDown => self.move_cursor_down(self.page_size, false),
             Key::End => self.move_cursor_down(usize::MAX, false),
 
-            Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection(),
+            Key::Char(' ', KeyModifiers::NONE) => self.toggle_cursor_selection()?,
             Key::Right(KeyModifiers::NONE) => {
                 self.set_all(true);
 
@@ -497,14 +544,12 @@ where
                 let dirty = self.input.handle_key(key);
 
                 if dirty {
-                    let options = self.filter_options();
-                    if options.len() <= self.cursor_index {
-                        self.cursor_index = options.len().saturating_sub(1);
-                    }
-                    self.filtered_options = options;
+                    self.refresh_options()?;
                 }
             }
         };
+
+        Ok(())
     }
 
     fn validate_current_answer(&self) -> InquireResult<Validation> {
@@ -548,8 +593,19 @@ where
             .filtered_options
             .iter()
             .cloned()
-            .map(|i| self.options.get(i).unwrap())
-            .collect::<Vec<&ListOption<T>>>();
+            .map(|i| match self.options.get(i) {
+                Some(val) => ListOptionView {
+                    index: i,
+                    content: ListOptionValue::Normal(val.string_value.as_str()),
+                    checked: val.checked,
+                },
+                None => ListOptionView {
+                    index: i,
+                    content: ListOptionValue::Dynamic(self.input.content()),
+                    checked: false,
+                },
+            })
+            .collect::<Vec<ListOptionView>>();
 
         let page = paginate(self.page_size, &choices, self.cursor_index);
 
@@ -568,6 +624,8 @@ where
         mut self,
         backend: &mut B,
     ) -> InquireResult<Vec<SelectedOption<T>>> {
+        self.refresh_options()?;
+
         loop {
             self.render(backend)?;
 
@@ -580,7 +638,7 @@ where
                     Validation::Valid => break,
                     Validation::Invalid(msg) => self.error = Some(msg),
                 },
-                key => self.on_change(key),
+                key => self.on_change(key)?,
             }
         }
 

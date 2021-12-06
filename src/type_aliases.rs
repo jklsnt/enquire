@@ -1,6 +1,6 @@
 //! General type aliases.
 
-use crate::error::CustomUserError;
+use crate::{error::CustomUserError, utils::ListOption};
 
 /// Type alias to represent the function used to filter options.
 ///
@@ -42,3 +42,14 @@ pub type Filter<'a, T> = &'a dyn Fn(&str, &T, &str, usize) -> bool;
 /// The function receives the current input and should return a collection of strings
 /// containing the suggestions to be made to the user.
 pub type Suggester<'a> = &'a dyn Fn(&str) -> Result<Vec<String>, CustomUserError>;
+
+pub type OptionCreator<'a, T> = &'a dyn Fn(&str) -> Result<T, CustomUserError>;
+
+pub type DynamicOptionCondition<'a, T> =
+    &'a dyn Fn(&str, &[ListOption<T>]) -> Result<Option<String>, CustomUserError>;
+
+#[derive(Copy, Clone)]
+pub enum DynamicOption<'a, T> {
+    Disabled,
+    Enabled(DynamicOptionCondition<'a, T>, OptionCreator<'a, T>),
+}
