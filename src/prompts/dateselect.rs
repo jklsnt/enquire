@@ -214,6 +214,12 @@ impl<'a> DateSelect<'a> {
         self
     }
 
+	/// Sets the accessor.
+	pub fn with_accessor(mut self, accessor: Accessor) -> Self {
+		self.accessor = Some(accessor);
+		self
+	}
+
     /// Sets the formatter.
     pub fn with_formatter(mut self, formatter: DateFormatter<'a>) -> Self {
         self.formatter = formatter;
