@@ -10,7 +10,7 @@ use crate::{
     error::{InquireError, InquireResult},
     formatter::{self, DateFormatter},
     terminal::{get_default_terminal, Terminal},
-    ui::{date::DateSelectBackend, Backend, Key, KeyModifiers, RenderConfig},
+    ui::{date::{DateSelectBackend, Accessor}, Backend, Key, KeyModifiers, RenderConfig},
     validator::{DateValidator, ErrorMessage, Validation},
 };
 
@@ -56,7 +56,6 @@ use crate::{
 ///     Err(_) => println!("There was an error in the system."),
 /// }
 /// ```
-#[derive(Clone)]
 pub struct DateSelect<'a> {
     /// Message to be presented to the user.
     pub message: &'a str,
@@ -100,6 +99,9 @@ pub struct DateSelect<'a> {
     /// config is treated as the only source of truth. If you want to customize colors
     /// and still suport NO_COLOR, you will have to do this on your end.
     pub render_config: RenderConfig,
+
+	/// Function to get associated information from selected NaiveDate.
+	pub accessor: Option<Accessor>,
 }
 
 impl<'a> DateSelect<'a> {
@@ -136,6 +138,7 @@ impl<'a> DateSelect<'a> {
             vim_mode: Self::DEFAULT_VIM_MODE,
             formatter: Self::DEFAULT_FORMATTER,
             validators: Self::DEFAULT_VALIDATORS,
+			accessor: None,
             week_start: Self::DEFAULT_WEEK_START,
             render_config: get_configuration(),
         }
@@ -273,7 +276,8 @@ struct DateSelectPrompt<'a> {
     vim_mode: bool,
     formatter: DateFormatter<'a>,
     validators: Vec<DateValidator<'a>>,
-    error: Option<ErrorMessage>,
+	accessor: Option<Accessor>,
+    error: Option<ErrorMessage>,	
 }
 
 impl<'a> DateSelectPrompt<'a> {
@@ -303,6 +307,7 @@ impl<'a> DateSelectPrompt<'a> {
             vim_mode: so.vim_mode,
             formatter: so.formatter,
             validators: so.validators,
+			accessor: so.accessor,
             error: None,
         })
     }
@@ -408,6 +413,7 @@ impl<'a> DateSelectPrompt<'a> {
             self.current_date,
             self.min_date,
             self.max_date,
+			&self.accessor,
         )?;
 
         if let Some(help_message) = self.help_message {

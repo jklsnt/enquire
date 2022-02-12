@@ -560,6 +560,8 @@ pub mod date {
 
     use super::{Backend, CommonBackend};
 
+	pub type Accessor = Box<dyn Fn (chrono::NaiveDate) -> Vec<Box<dyn std::fmt::Display>>>;
+	
     pub trait DateSelectBackend: CommonBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
@@ -573,6 +575,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
+			items: &Option<Accessor>,
         ) -> Result<()>;
     }
 
@@ -595,6 +598,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
+			items: &Option<Accessor>,
         ) -> Result<()> {
             macro_rules! write_prefix {
                 () => {{
@@ -693,6 +697,12 @@ pub mod date {
                 }
 
                 self.new_line()?;
+				if let Some(ref accessor) = items {
+					for i in accessor(selected_date) {					
+						self.terminal.write(format!("{}", i))?;
+						self.new_line()?;
+					}
+				}
             }
 
             Ok(())
