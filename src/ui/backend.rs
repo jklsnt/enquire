@@ -560,7 +560,7 @@ pub mod date {
 
     use super::{Backend, CommonBackend};
 
-	pub type Accessor = Box<dyn Fn (chrono::NaiveDate) -> Vec<Box<dyn std::fmt::Display>>>;
+	pub type Accessor = Box<dyn Fn (chrono::NaiveDate) -> Vec<String>>;
 	
     pub trait DateSelectBackend: CommonBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
