@@ -6,9 +6,9 @@ use crate::{
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
-    ui::{IndexPrefix, Key, RenderConfig, Styled},
+    ui::{IndexPrefix, Key, RenderConfig, Styled, Color},
     utils::{int_log10, Page},
-    validator::ErrorMessage,
+    validator::ErrorMessage,	
 };
 
 pub trait CommonBackend {
@@ -691,8 +691,8 @@ pub mod date {
                     }
 
 					if let Some(ref accessor) = items {
-						if accessor(selected_data).len() > 0 {
-							style_sheet = style_sheet.with_fg(Color::Rgb {red: 108, blue: 173, green: 80});
+						if accessor(selected_date).len() > 0 {
+							style_sheet = style_sheet.with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
 						}
 					}
                     let token = Styled::new(date).with_style_sheet(style_sheet);
