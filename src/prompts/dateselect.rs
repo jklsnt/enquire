@@ -101,7 +101,7 @@ pub struct DateSelect<'a> {
     pub render_config: RenderConfig,
 
 	/// Function to get associated information from selected NaiveDate.
-	pub accessor: Option<Accessor>,
+	pub accessor: Option<Accessor<'a>>,
 }
 
 impl<'a> DateSelect<'a> {
@@ -215,7 +215,7 @@ impl<'a> DateSelect<'a> {
     }
 
 	/// Sets the accessor.
-	pub fn with_accessor(mut self, accessor: Accessor) -> Self {
+	pub fn with_accessor(mut self, accessor: Accessor<'a>) -> Self {
 		self.accessor = Some(accessor);
 		self
 	}
@@ -282,7 +282,7 @@ struct DateSelectPrompt<'a> {
     vim_mode: bool,
     formatter: DateFormatter<'a>,
     validators: Vec<DateValidator<'a>>,
-	accessor: Option<Accessor>,
+	accessor: Option<Accessor<'a>>,
     error: Option<ErrorMessage>,	
 }
 
@@ -400,7 +400,7 @@ impl<'a> DateSelectPrompt<'a> {
         self.current_date
     }
 
-    fn render<B: DateSelectBackend>(&mut self, backend: &mut B) -> InquireResult<()> {
+    fn render<B: DateSelectBackend<'a>>(&mut self, backend: &mut B) -> InquireResult<()> {
         let prompt = &self.message;
 
         backend.frame_setup()?;
@@ -431,7 +431,7 @@ impl<'a> DateSelectPrompt<'a> {
         Ok(())
     }
 
-    fn prompt<B: DateSelectBackend>(mut self, backend: &mut B) -> InquireResult<NaiveDate> {
+    fn prompt<B: DateSelectBackend<'a>>(mut self, backend: &mut B) -> InquireResult<NaiveDate> {
         let final_answer: NaiveDate;
 
         loop {

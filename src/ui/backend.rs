@@ -560,9 +560,9 @@ pub mod date {
 
     use super::{Backend, CommonBackend};
 
-	pub type Accessor = &dyn Fn (chrono::NaiveDate) -> Vec<String>;
+	pub type Accessor<'a> = &'a dyn Fn (chrono::NaiveDate) -> Vec<String>;
 	
-    pub trait DateSelectBackend: CommonBackend {
+    pub trait DateSelectBackend<'a>: CommonBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
         #[allow(clippy::too_many_arguments)]
@@ -575,11 +575,11 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-			items: &Option<Accessor>,
+			items: &Option<Accessor<'a>>,
         ) -> Result<()>;
     }
 
-    impl<T> DateSelectBackend for Backend<T>
+    impl<'a, T> DateSelectBackend<'a> for Backend<T>
     where
         T: Terminal,
     {
@@ -598,7 +598,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-			items: &Option<Accessor>,
+			items: &Option<Accessor<'a>>,
         ) -> Result<()> {
             macro_rules! write_prefix {
                 () => {{
