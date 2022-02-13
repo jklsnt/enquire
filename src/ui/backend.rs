@@ -6,7 +6,7 @@ use crate::{
     input::Input,
     list_option::ListOption,
     terminal::{Terminal, TerminalSize},
-    ui::{IndexPrefix, Key, RenderConfig, Styled, Color},
+    ui::{IndexPrefix, Key, RenderConfig, Styled, Color, StyleSheet},
     utils::{int_log10, Page},
     validator::ErrorMessage,    
 };
@@ -692,7 +692,7 @@ pub mod date {
 
                     if let Some(ref accessor) = items {
                         if accessor(selected_date).len() > 0 {
-                            style_sheet = StyleSheet::empty().with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
+                            style_sheet = super::StyleSheet::empty().with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
                         }			
                     }
                     let token = Styled::new(date).with_style_sheet(style_sheet);
