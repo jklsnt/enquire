@@ -8,7 +8,7 @@ use crate::{
     terminal::{Terminal, TerminalSize},
     ui::{IndexPrefix, Key, RenderConfig, Styled, Color},
     utils::{int_log10, Page},
-    validator::ErrorMessage,	
+    validator::ErrorMessage,    
 };
 
 pub trait CommonBackend {
@@ -560,8 +560,8 @@ pub mod date {
 
     use super::{Backend, CommonBackend};
 
-	pub type Accessor<'a> = &'a dyn Fn (chrono::NaiveDate) -> Vec<String>;
-	
+        pub type Accessor<'a> = &'a dyn Fn (chrono::NaiveDate) -> Vec<String>;
+        
     pub trait DateSelectBackend<'a>: CommonBackend {
         fn render_calendar_prompt(&mut self, prompt: &str) -> Result<()>;
 
@@ -575,7 +575,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-			items: &Option<Accessor<'a>>,
+                        items: &Option<Accessor<'a>>,
         ) -> Result<()>;
     }
 
@@ -598,7 +598,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-			items: &Option<Accessor<'a>>,
+                        items: &Option<Accessor<'a>>,
         ) -> Result<()> {
             macro_rules! write_prefix {
                 () => {{
@@ -690,25 +690,25 @@ pub mod date {
                         }
                     }
 
-					if let Some(ref accessor) = items {
-						if accessor(selected_date).len() > 0 {
-							style_sheet = style_sheet.with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
-						}
-					}
+                    if let Some(ref accessor) = items {
+                        if accessor(selected_date).len() > 0 {
+                            style_sheet = StyleSheet::empty().with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
+                        }			
+                    }
                     let token = Styled::new(date).with_style_sheet(style_sheet);
                     self.terminal.write_styled(&token)?;
 
                     date_it = date_it.succ();
                 }
 
-                self.new_line()?;				
+                self.new_line()?;                               
             }
-			if let Some(ref accessor) = items {
-				for i in accessor(selected_date) {					
-					self.terminal.write(format!("{}", i))?;
-					self.new_line()?;
-				}
-			}
+                        if let Some(ref accessor) = items {
+                                for i in accessor(selected_date) {                                      
+                                        self.terminal.write(format!("{}", i))?;
+                                        self.new_line()?;
+                                }
+                        }
             Ok(())
         }
     }
