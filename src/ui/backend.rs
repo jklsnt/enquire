@@ -690,6 +690,11 @@ pub mod date {
                         }
                     }
 
+					if let Some(ref accessor) = items {
+						if accessor(selected_data).len() > 0 {
+							style_sheet = style_sheet.with_fg(Color::Rgb {red: 108, blue: 173, green: 80});
+						}
+					}
                     let token = Styled::new(date).with_style_sheet(style_sheet);
                     self.terminal.write_styled(&token)?;
 
