@@ -691,7 +691,7 @@ pub mod date {
                     }
 
                     if let Some(ref accessor) = items {
-                        if accessor(date_it.day()).len() > 0 {
+                        if accessor(date_it).len() > 0 {
                             style_sheet = super::StyleSheet::empty().with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
                         }			
                     }
