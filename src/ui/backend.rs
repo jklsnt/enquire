@@ -700,12 +700,12 @@ pub mod date {
 
                     date_it = date_it.succ();
                 }
-
-                self.new_line()?;                               
+                self.new_line()?;
             }
             if let Some(ref accessor) = items {
                 for i in accessor(selected_date) {                                      
-                    self.terminal.write(format!("{}", i))?;
+                    self.terminal.write(i)?;
+		    self.terminal.write("\n");
                     self.new_line()?;
                 }
             }
