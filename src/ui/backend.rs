@@ -657,7 +657,7 @@ pub mod date {
 		for _ in 0..42 {
 		    amounts.push(accessor(date_it).len())
 		}
-		max = amounts.iter().max().unwrap();		
+		max = *amounts.iter().max().unwrap();		
 	    }
             for _ in 0..6 {
                 write_prefix!()?;
@@ -706,7 +706,7 @@ pub mod date {
 			    let r = (255f64 * ratio + 30f64 * (1f64-ratio)).ceil();
 			    let g = (255f64 * ratio + 48f64 * (1f64-ratio)).ceil();
 			    let b = (255f64 * ratio + 22f64 * (1f64-ratio)).ceil();
-                            style_sheet = style_sheet.with_fg(super::Color::Rgb {r as u8, g as u8, b as u8});
+                            style_sheet = style_sheet.with_fg(super::Color::Rgb {r: r as u8, g: g as u8, b: b as u8});
                         }			
                     }
                     let token = Styled::new(date).with_style_sheet(style_sheet);
