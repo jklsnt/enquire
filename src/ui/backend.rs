@@ -706,6 +706,7 @@ pub mod date {
 			    let r = (255f64 * ratio + 108f64 * (1f64-ratio)).ceil();
 			    let g = (255f64 * ratio + 173f64 * (1f64-ratio)).ceil();
 			    let b = (255f64 * ratio + 80f64 * (1f64-ratio)).ceil();
+			    println!("{} {} {}", r, g, b);
                             style_sheet = style_sheet.with_fg(super::Color::Rgb {r: r as u8, g: g as u8, b: b as u8});
                         }			
                     }
