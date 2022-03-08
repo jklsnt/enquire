@@ -655,8 +655,10 @@ pub mod date {
 		let temp = get_start_date(month, year);
 		let mut amounts = Vec::new();
 		for _ in 0..42 {
-		    amounts.push(accessor(date_it).len())
+		    amounts.push(accessor(date_it).len());
+		    println!("{}", accessor(date_it).len());
 		}
+		
 		max = *amounts.iter().max().unwrap();		
 	    }
             for _ in 0..6 {
