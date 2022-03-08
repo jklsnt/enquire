@@ -598,7 +598,7 @@ pub mod date {
             selected_date: chrono::NaiveDate,
             min_date: Option<chrono::NaiveDate>,
             max_date: Option<chrono::NaiveDate>,
-                        items: &Option<Accessor<'a>>,
+            items: &Option<Accessor<'a>>,
         ) -> Result<()> {
             macro_rules! write_prefix {
                 () => {{
@@ -650,6 +650,15 @@ pub mod date {
                 }
             }
 
+	    let max = 0;
+	    if let Some(ref accessor) = items {		
+		let temp = get_start_date(month, year);
+		let amounts = Vec::new();
+		for _ in 0..42 {
+		    amounts.push(accessor(date_it.day()).len())
+		}
+		max = amounts.iter().max();		
+	    }
             for _ in 0..6 {
                 write_prefix!()?;
 
@@ -691,8 +700,13 @@ pub mod date {
                     }
 
                     if let Some(ref accessor) = items {
-                        if accessor(date_it).len() > 0 {
-                            style_sheet = style_sheet.with_fg(super::Color::Rgb {r: 108, g: 173, b: 80});
+			let l = accessor(date_it).len();
+                        if l > 0 {
+			    let ratio = (l as f64)/(max as f64);
+			    let r = ceilf64(255 * ratio + 30 * (1-ratio));
+			    let g = ceilf64(255 * ratio + 48 * (1-ratio));
+			    let b = ceilf64(255 * ratio + 22 * (1-ratio));
+                            style_sheet = style_sheet.with_fg(super::Color::Rgb {r, g, b});
                         }			
                     }
                     let token = Styled::new(date).with_style_sheet(style_sheet);
