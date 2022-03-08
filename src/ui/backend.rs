@@ -650,10 +650,10 @@ pub mod date {
                 }
             }
 
-	    let max = 0;
+	    let mut max = 0;
 	    if let Some(ref accessor) = items {		
 		let temp = get_start_date(month, year);
-		let amounts = Vec::new();
+		let mut amounts = Vec::new();
 		for _ in 0..42 {
 		    amounts.push(accessor(date_it).len())
 		}
