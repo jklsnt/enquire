@@ -655,9 +655,9 @@ pub mod date {
 		let temp = get_start_date(month, year);
 		let amounts = Vec::new();
 		for _ in 0..42 {
-		    amounts.push(accessor(date_it.day()).len())
+		    amounts.push(accessor(date_it).len())
 		}
-		max = amounts.iter().max();		
+		max = amounts.iter().max()?;		
 	    }
             for _ in 0..6 {
                 write_prefix!()?;
@@ -703,9 +703,9 @@ pub mod date {
 			let l = accessor(date_it).len();
                         if l > 0 {
 			    let ratio = (l as f64)/(max as f64);
-			    let r = ceilf64(255f64 * ratio + 30f64 * (1f64-ratio));
-			    let g = ceilf64(255f64 * ratio + 48f64 * (1f64-ratio));
-			    let b = ceilf64(255f64 * ratio + 22f64 * (1f64-ratio));
+			    let r = (255f64 * ratio + 30f64 * (1f64-ratio)).ceil();
+			    let g = (255f64 * ratio + 48f64 * (1f64-ratio)).ceil();
+			    let b = (255f64 * ratio + 22f64 * (1f64-ratio)).ceil();
                             style_sheet = style_sheet.with_fg(super::Color::Rgb {r, g, b});
                         }			
                     }
