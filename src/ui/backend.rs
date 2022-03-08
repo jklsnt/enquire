@@ -703,9 +703,9 @@ pub mod date {
 			let l = accessor(date_it).len();
                         if l > 0 {
 			    let ratio = (l as f64)/(max as f64);
-			    let r = (255f64 * ratio + 30f64 * (1f64-ratio)).ceil();
-			    let g = (255f64 * ratio + 48f64 * (1f64-ratio)).ceil();
-			    let b = (255f64 * ratio + 22f64 * (1f64-ratio)).ceil();
+			    let r = (255f64 * ratio + 108f64 * (1f64-ratio)).ceil();
+			    let g = (255f64 * ratio + 173f64 * (1f64-ratio)).ceil();
+			    let b = (255f64 * ratio + 80f64 * (1f64-ratio)).ceil();
                             style_sheet = style_sheet.with_fg(super::Color::Rgb {r: r as u8, g: g as u8, b: b as u8});
                         }			
                     }
